@@ -2,10 +2,34 @@
 require "../koneksi.php";
 require "session.php";
 
-// Ambil data dari database
-$kategori_query = $koneksi->query("SELECT * FROM kategori");
-$produk_query = $koneksi->query("SELECT produk.*, kategori.nama as kategori_nama FROM produk JOIN kategori ON produk.kategori_id = kategori.id");
-$users_query = $koneksi->query("SELECT id, username, email, nomor_telepon FROM users");
+$limit = 10; // Jumlah data per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$start = ($page - 1) * $limit;
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+// Prepared Statements untuk menghindari SQL Injection
+$stmt_users = $koneksi->prepare("SELECT id, username, email, nomor_telepon FROM users WHERE username LIKE ? OR email LIKE ? LIMIT ?, ?");
+$search_param = "%$search%";
+$stmt_users->bind_param("ssii", $search_param, $search_param, $start, $limit);
+$stmt_users->execute();
+$users_query = $stmt_users->get_result();
+
+$stmt_kategori = $koneksi->prepare("SELECT * FROM kategori WHERE nama LIKE ? LIMIT ?, ?");
+$stmt_kategori->bind_param("sii", $search_param, $start, $limit);
+$stmt_kategori->execute();
+$kategori_query = $stmt_kategori->get_result();
+
+$stmt_produk = $koneksi->prepare("SELECT produk.*, kategori.nama as kategori_nama FROM produk JOIN kategori ON produk.kategori_id = kategori.id WHERE produk.nama LIKE ? LIMIT ?, ?");
+$stmt_produk->bind_param("sii", $search_param, $start, $limit);
+$stmt_produk->execute();
+$produk_query = $stmt_produk->get_result();
+
+// Hitung total data untuk paginasi
+$total_users = $koneksi->query("SELECT COUNT(*) AS total FROM users WHERE username LIKE '%$search%' OR email LIKE '%$search%' ")->fetch_assoc()['total'];
+$total_kategori = $koneksi->query("SELECT COUNT(*) AS total FROM kategori WHERE nama LIKE '%$search%' ")->fetch_assoc()['total'];
+$total_produk = $koneksi->query("SELECT COUNT(*) AS total FROM produk WHERE nama LIKE '%$search%' ")->fetch_assoc()['total'];
+
+$total_pages = ceil(max($total_users, $total_kategori, $total_produk) / $limit);
 ?>
 
 <!DOCTYPE html>
@@ -41,20 +65,19 @@ $users_query = $koneksi->query("SELECT id, username, email, nomor_telepon FROM u
 <body>
 <div class="container">
     <h2>🔹 Halo, <?= htmlspecialchars($_SESSION['admin_username']); ?>!</h2>
-    <p>Selamat datang di panel admin.</p>
-    <a href="logout.php" class="btn btn-danger btn-logout">Logout</a>
+    <a href="logout.php" class="btn btn-danger">Logout</a>
     <hr>
 
-    <h3>📂 Data Users <a href="tambah_user.php" class="btn btn-primary">Tambah</a></h3>
+    <form method="GET" class="mb-3">
+        <input type="text" name="search" class="form-control" placeholder="Cari..." value="<?= htmlspecialchars($search); ?>">
+        <button type="submit" class="btn btn-primary mt-2">Cari</button>
+    </form>
+
+    <h3>📂 Data Users</h3>
+    <a href="tambah_user.php" class="btn btn-success">Tambah</a>
     <table class="table table-dark table-striped">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Nomor Telepon</th>
-                <th>Aksi</th>
-            </tr>
+            <tr><th>ID</th><th>Username</th><th>Email</th><th>Nomor Telepon</th><th>Aksi</th></tr>
         </thead>
         <tbody>
             <?php while ($user = $users_query->fetch_assoc()): ?>
@@ -63,72 +86,69 @@ $users_query = $koneksi->query("SELECT id, username, email, nomor_telepon FROM u
                     <td><?= htmlspecialchars($user['username']); ?></td>
                     <td><?= htmlspecialchars($user['email']); ?></td>
                     <td><?= htmlspecialchars($user['nomor_telepon']); ?></td>
-                    <td>
-                        <a href="edit_user.php?id=<?= $user['id']; ?>" class="btn btn-warning">Edit</a>
-                        <a href="hapus_user.php?id=<?= $user['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus user ini?');">Hapus</a>
-                    </td>
+                    <td><a href="edit_user.php?id=<?= $user['id']; ?>" class="btn btn-warning">Edit</a>
+                    <a href="hapus_user.php?id=<?= $produk['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus user ini?');">Hapus</a></td>
                 </tr>
             <?php endwhile; ?>
         </tbody>
     </table>
 
-    <h3>📂 Data Kategori <a href="tambah_kategori.php" class="btn btn-primary">Tambah</a></h3>
+    <h3>📂 Data Kategori</h3>
+    <a href="tambah_kategori.php" class="btn btn-success">Tambah</a>
     <table class="table table-dark table-striped">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nama Kategori</th>
-                <th>Aksi</th>
-            </tr>
+            <tr><th>ID</th><th>Nama Kategori</th><th>Aksi</th></tr>
         </thead>
         <tbody>
             <?php while ($kategori = $kategori_query->fetch_assoc()): ?>
                 <tr>
                     <td><?= $kategori['id']; ?></td>
                     <td><?= htmlspecialchars($kategori['nama']); ?></td>
-                    <td>
-                        <a href="edit_kategori.php?id=<?= $kategori['id']; ?>" class="btn btn-warning">Edit</a>
-                        <a href="hapus_kategori.php?id=<?= $kategori['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus kategori ini?');">Hapus</a>
-                    </td>
+                    <td><a href="edit_kategori.php?id=<?= $kategori['id']; ?>" class="btn btn-warning">Edit</a>
+                    <a href="hapus_kategori.php?id=<?= $produk['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus kategori ini?');">Hapus</a></td>
                 </tr>
             <?php endwhile; ?>
         </tbody>
     </table>
 
-    <h3>📂 Data Produk <a href="tambah_produk.php" class="btn btn-primary">Tambah</a></h3>
+    <h3>📂 Data Produk</h3>
+    <a href="tambah_produk.php" class="btn btn-success">Tambah</a>
     <table class="table table-dark table-striped">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Kategori</th>
-                <th>Nama Produk</th>
-                <th>Harga</th>
-                <th>Foto</th>
-                <th>Detail</th>
-                <th>Stok</th>
-                <th>Aksi</th>
-            </tr>
+            <tr><th>ID</th><th>Nama Produk</th><th>Kategori</th><th>Harga</th><th>Aksi</th></tr>
         </thead>
         <tbody>
             <?php while ($produk = $produk_query->fetch_assoc()): ?>
                 <tr>
                     <td><?= $produk['id']; ?></td>
-                    <td><?= htmlspecialchars($produk['kategori_nama']); ?></td>
                     <td><?= htmlspecialchars($produk['nama']); ?></td>
-                    <td>Rp <?= number_format($produk['harga'], 0, ',', '.'); ?></td>
-                    <td><img src="../<?= htmlspecialchars($produk['foto']); ?>" width="50" alt="Foto Produk"></td>
-                    <td><?= htmlspecialchars($produk['detail']); ?></td>
-                    <td><?= $produk['stok']; ?></td>
-                    <td>
-                        <a href="edit_produk.php?id=<?= $produk['id']; ?>" class="btn btn-warning">Edit</a>
-                        <a href="hapus_produk.php?id=<?= $produk['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus produk ini?');">Hapus</a>
+                    <td><?= htmlspecialchars($produk['kategori_nama']); ?></td>
+                    <td><?= htmlspecialchars($produk['harga']); ?></td>
+                    <td><a href="edit_produk.php?id=<?= $produk['id']; ?>" class="btn btn-warning">Edit</a>
+                    <a href="hapus_produk.php?id=<?= $produk['id']; ?>" class="btn btn-danger" onclick="return confirm('Hapus produk ini?');">Hapus</a>
                     </td>
                 </tr>
             <?php endwhile; ?>
         </tbody>
     </table>
-</div>
 
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination">
+            <li class="page-item <?= ($page == 1) ? 'disabled' : ''; ?>">
+                <a class="page-link" href="?page=<?= $page - 1; ?>&search=<?= htmlspecialchars($search); ?>">Previous</a>
+            </li>
+            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                <li class="page-item <?= ($i == $page) ? 'active' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $i; ?>&search=<?= htmlspecialchars($search); ?>"> <?= $i; ?> </a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?= ($page == $total_pages) ? 'disabled' : ''; ?>">
+                <a class="page-link" href="?page=<?= $page + 1; ?>&search=<?= htmlspecialchars($search); ?>">Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

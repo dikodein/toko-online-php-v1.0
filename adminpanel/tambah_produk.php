@@ -11,10 +11,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stok = $_POST['stok']; // "Tersedia" atau "Habis"
     $kategori_id = $_POST['kategori_id'];
     $detail = trim($_POST['detail']);
+    $penjual_nama = trim($_POST['penjual_nama']);
+    $whatsapp = trim($_POST['whatsapp']);
 
     // Validasi input tidak boleh kosong
-    if (empty($nama_produk) || empty($harga) || empty($stok) || empty($kategori_id) || empty($detail)) {
+    if (empty($nama_produk) || empty($harga) || empty($stok) || empty($kategori_id) || empty($detail) || empty($penjual_nama) || empty($whatsapp)) {
         echo "<script>alert('Semua kolom harus diisi!');</script>";
+    } elseif (!preg_match('/^[0-9]+$/', $whatsapp)) {
+        echo "<script>alert('Nomor WhatsApp hanya boleh berisi angka!');</script>";
     } else {
         // Konversi harga ke angka murni (hapus tanda titik)
         $harga = str_replace('.', '', $harga);
@@ -39,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Simpan data ke database
-        $query = $koneksi->prepare("INSERT INTO produk (nama, harga, stok, kategori_id, foto, detail) VALUES (?, ?, ?, ?, ?, ?)");
-        $query->bind_param("sisiss", $nama_produk, $harga, $stok, $kategori_id, $foto_path, $detail);
+        $query = $koneksi->prepare("INSERT INTO produk (nama, harga, stok, kategori_id, foto, detail, penjual_nama, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $query->bind_param("sisissss", $nama_produk, $harga, $stok, $kategori_id, $foto_path, $detail, $penjual_nama, $whatsapp);
 
         if ($query->execute()) {
             echo "<script>
@@ -100,6 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="mb-3">
             <label class="form-label">Detail Produk</label>
             <textarea name="detail" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nama Penjual</label>
+            <input type="text" name="penjual_nama" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nomor WhatsApp</label>
+            <input type="text" name="whatsapp" class="form-control" required>
+            <small class="text-muted">Masukkan nomor tanpa spasi atau tanda lain, contoh: 081234567890</small>
         </div>
         <div class="mb-3">
             <label class="form-label">Foto Produk</label>

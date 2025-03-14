@@ -1,0 +1,133 @@
+<?php
+require "koneksi.php";
+
+$limit = 10; // Jumlah data per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$start = ($page - 1) * $limit;
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+$category = isset($_GET['category']) ? (int)$_GET['category'] : 0;
+
+// Ambil data kategori untuk dropdown
+$kategori_result = $koneksi->query("SELECT * FROM kategori");
+
+// Query Produk
+$query_produk = "SELECT produk.*, kategori.nama as kategori_nama, produk.penjual_nama, produk.whatsapp 
+                 FROM produk 
+                 JOIN kategori ON produk.kategori_id = kategori.id 
+                 WHERE produk.nama LIKE ? AND produk.stok = 'Tersedia'";
+$params = ["%$search%"];
+$types = "s";
+
+if ($category > 0) {
+    $query_produk .= " AND produk.kategori_id = ?";
+    $params[] = $category;
+    $types .= "i";
+}
+
+$query_produk .= " LIMIT ?, ?";
+$params[] = $start;
+$params[] = $limit;
+$types .= "ii";
+
+$stmt_produk = $koneksi->prepare($query_produk);
+$stmt_produk->bind_param($types, ...$params);
+$stmt_produk->execute();
+$produk_query = $stmt_produk->get_result();
+
+// Hitung total produk
+$total_query = "SELECT COUNT(*) AS total FROM produk 
+                WHERE nama LIKE ? AND stok = 'Tersedia'";
+$total_params = ["%$search%"];
+$total_types = "s";
+
+if ($category > 0) {
+    $total_query .= " AND kategori_id = ?";
+    $total_params[] = $category;
+    $total_types .= "i";
+}
+
+$stmt_total = $koneksi->prepare($total_query);
+$stmt_total->bind_param($total_types, ...$total_params);
+$stmt_total->execute();
+$total_produk = $stmt_total->get_result()->fetch_assoc()['total'];
+$total_pages = ceil($total_produk / $limit);
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Toko Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar fixed-top navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.php">Toko Online</a>
+  </div>
+</nav>
+
+<br><br><br><br>
+<div class="container">
+    <form method="GET" class="mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Cari produk..." value="<?= htmlspecialchars($search); ?>">
+            </div>
+            <div class="col-md-4">
+                <select name="category" class="form-control">
+                    <option value="0">Semua Kategori</option>
+                    <?php while ($kategori = $kategori_result->fetch_assoc()): ?>
+                        <option value="<?= $kategori['id']; ?>" <?= ($category == $kategori['id']) ? 'selected' : ''; ?>><?= htmlspecialchars($kategori['nama']); ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">Cari</button>
+            </div>
+        </div>
+    </form>
+
+    <h3 class="mb-4">📦 Produk</h3>
+    
+    <div class="row">
+        <?php while ($produk = $produk_query->fetch_assoc()): ?>
+            <div class="col-md-4">
+                <div class="card mb-4 shadow-sm">
+                    <img src="<?= $produk['foto']; ?>" class="card-img-top" alt="<?= htmlspecialchars($produk['nama']); ?>" style="height: 250px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title"> <?= htmlspecialchars($produk['nama']); ?> </h5>
+                        <p class="text-muted"><span class="badge bg-primary"> <?= htmlspecialchars($produk['kategori_nama']); ?> </span></p>
+                        <h6 class="text-primary">Rp <?= number_format($produk['harga'], 0, ',', '.'); ?></h6>
+                        <p class="text-muted"><span class="badge bg-warning"><b style="color:gray;"><?= htmlspecialchars($produk['penjual_nama']); ?></b></span></p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="detail_produk.php?id=<?= $produk['id']; ?>" class="btn btn-primary">Lihat detail</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endwhile; ?>
+    </div>
+
+    <?php if ($total_produk > 0): ?>
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item <?= ($page == 1) ? 'disabled' : ''; ?>">
+                <a class="page-link" href="?page=<?= $page - 1; ?>&search=<?= htmlspecialchars($search); ?>&category=<?= $category; ?>">Previous</a>
+            </li>
+            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                <li class="page-item <?= ($i == $page) ? 'active' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $i; ?>&search=<?= htmlspecialchars($search); ?>&category=<?= $category; ?>"> <?= $i; ?> </a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?= ($page == $total_pages) ? 'disabled' : ''; ?>">
+                <a class="page-link" href="?page=<?= $page + 1; ?>&search=<?= htmlspecialchars($search); ?>&category=<?= $category; ?>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <?php endif; ?>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

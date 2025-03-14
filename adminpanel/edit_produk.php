@@ -1,15 +1,17 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require "../koneksi.php";
 require "session.php";
 
-// Ambil ID produk dari URL
 $id = $_GET['id'] ?? '';
 if (!$id) {
     echo "<script>alert('ID produk tidak ditemukan!'); window.location='index.php';</script>";
     exit;
 }
 
-// Ambil data produk dari database
+// Ambil data produk
 $query_produk = $koneksi->prepare("SELECT * FROM produk WHERE id = ?");
 $query_produk->bind_param("i", $id);
 $query_produk->execute();
@@ -21,22 +23,25 @@ if (!$produk) {
     exit;
 }
 
-// Ambil daftar kategori dari database
+// Ambil kategori
 $query_kategori = $koneksi->query("SELECT id, nama FROM kategori");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama_produk = trim($_POST['nama_produk']);
-    $harga = trim($_POST['harga']);
+    $harga = preg_replace('/\D/', '', $_POST['harga']);
     $stok = $_POST['stok'];
     $kategori_id = $_POST['kategori_id'];
     $detail = trim($_POST['detail']);
+    $kode_negara = $_POST['kode_negara'];
+    $whatsapp = $kode_negara . preg_replace('/\D/', '', $_POST['whatsapp']);
+    $penjual_nama = trim($_POST['penjual_nama']);
 
-    if (empty($nama_produk) || empty($harga) || empty($stok) || empty($kategori_id) || empty($detail)) {
+    if (empty($nama_produk) || empty($harga) || empty($stok) || empty($kategori_id) || empty($detail) || empty($whatsapp) || empty($penjual_nama)) {
         echo "<script>alert('Semua kolom harus diisi!');</script>";
     } else {
-        $harga = str_replace('.', '', $harga);
         $foto_path = $produk['foto'];
 
+        // Upload gambar jika ada
         if (!empty($_FILES['foto']['name'])) {
             $foto_nama = $_FILES['foto']['name'];
             $foto_tmp = $_FILES['foto']['tmp_name'];
@@ -44,17 +49,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $foto_ext = strtolower(pathinfo($foto_nama, PATHINFO_EXTENSION));
             $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
 
-            if (in_array($foto_ext, $allowed_ext) && $foto_size <= 2097152) {
+            $mime_type = mime_content_type($foto_tmp);
+
+            if (in_array($foto_ext, $allowed_ext) && $foto_size <= 2097152 && in_array($mime_type, ['image/jpeg', 'image/png', 'image/gif'])) {
                 $foto_path = "uploads/" . time() . "_" . $foto_nama;
-                move_uploaded_file($foto_tmp, "../" . $foto_path);
+
+                if (move_uploaded_file($foto_tmp, "../" . $foto_path)) {
+                    // Hapus foto lama
+                    if (!empty($produk['foto']) && file_exists("../" . $produk['foto'])) {
+                        unlink("../" . $produk['foto']);
+                    }
+                } else {
+                    echo "<script>alert('Gagal mengunggah gambar! Periksa izin folder.');</script>";
+                    exit;
+                }
             } else {
-                echo "<script>alert('Format gambar harus JPG, JPEG, PNG, atau GIF dan max 2MB!');</script>";
+                echo "<script>alert('Format gambar tidak valid atau ukuran terlalu besar!');</script>";
                 exit;
             }
         }
 
-        $query = $koneksi->prepare("UPDATE produk SET nama=?, harga=?, stok=?, kategori_id=?, foto=?, detail=? WHERE id=?");
-        $query->bind_param("sisissi", $nama_produk, $harga, $stok, $kategori_id, $foto_path, $detail, $id);
+        // Update produk
+        $query = $koneksi->prepare("UPDATE produk SET nama=?, harga=?, stok=?, kategori_id=?, foto=?, detail=?, whatsapp=?, penjual_nama=? WHERE id=?");
+        $query->bind_param("sississsi", $nama_produk, $harga, $stok, $kategori_id, $foto_path, $detail, $whatsapp, $penjual_nama, $id);
 
         if ($query->execute()) {
             echo "<script>alert('Produk berhasil diperbarui!'); window.location='index.php';</script>";
@@ -64,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="id">
@@ -75,8 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <script>
         function formatRupiah(input) {
             let value = input.value.replace(/\D/g, "");
-            value = new Intl.NumberFormat("id-ID").format(value);
-            input.value = value;
+            input.value = new Intl.NumberFormat("id-ID").format(value);
+        }
+
+        function formatWhatsApp(input) {
+            input.value = input.value.replace(/^0+/, "");
         }
     </script>
 </head>
@@ -115,13 +136,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <textarea name="detail" class="form-control" rows="3" required><?= htmlspecialchars($produk['detail']) ?></textarea>
         </div>
         <div class="mb-3">
+            <label class="form-label">Nama Penjual</label>
+            <input type="text" name="penjual_nama" class="form-control" value="<?= htmlspecialchars($produk['penjual_nama']) ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nomor WhatsApp</label>
+            <div class="d-flex">
+                <select name="kode_negara" class="form-select" style="width: 120px;" required>
+                    <option value="+62" selected>+62 (ID)</option>
+                    <option value="+1">+1 (US)</option>
+                    <option value="+44">+44 (UK)</option>
+                </select>
+                <input type="text" name="whatsapp" class="form-control ms-2" value="<?= substr($produk['whatsapp'], 3) ?>" oninput="formatWhatsApp(this)" required>
+            </div>
+        </div>
+        <div class="mb-3">
             <label class="form-label">Foto Produk</label>
-            <input type="file" name="foto" class="form-control" accept="image/*">
-            <small class="text-muted">Format: JPG, JPEG, PNG, GIF. Max 2MB</small>
-            <br>
-            <?php if ($produk['foto']): ?>
-                <img src="../<?= $produk['foto'] ?>" alt="Foto Produk" width="100" class="mt-2">
-            <?php endif; ?>
+            <input type="file" name="foto" class="form-control">
+            <img src="../<?= $produk['foto'] ?>" width="100" class="mt-2">
         </div>
         <button type="submit" class="btn btn-primary">Simpan</button>
         <a href="index.php" class="btn btn-secondary">Kembali</a>

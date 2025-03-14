@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 13, 2025 at 09:28 AM
+-- Generation Time: Mar 14, 2025 at 01:00 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -37,7 +37,8 @@ CREATE TABLE `kategori` (
 --
 
 INSERT INTO `kategori` (`id`, `nama`) VALUES
-(2, 'Elektronik');
+(2, 'Elektronik'),
+(4, 'Service');
 
 -- --------------------------------------------------------
 
@@ -48,6 +49,8 @@ INSERT INTO `kategori` (`id`, `nama`) VALUES
 CREATE TABLE `produk` (
   `id` int(11) NOT NULL,
   `kategori_id` int(11) DEFAULT NULL,
+  `penjual_nama` varchar(255) NOT NULL,
+  `whatsapp` varchar(255) NOT NULL,
   `nama` varchar(255) DEFAULT NULL,
   `harga` double DEFAULT NULL,
   `foto` varchar(255) DEFAULT NULL,
@@ -59,8 +62,9 @@ CREATE TABLE `produk` (
 -- Dumping data for table `produk`
 --
 
-INSERT INTO `produk` (`id`, `kategori_id`, `nama`, `harga`, `foto`, `detail`, `stok`) VALUES
-(3, 2, 'Laptop Asus ROG', 6000000, 'uploads/1741853131_Logo.png', 'Blablabla', 'tersedia');
+INSERT INTO `produk` (`id`, `kategori_id`, `penjual_nama`, `whatsapp`, `nama`, `harga`, `foto`, `detail`, `stok`) VALUES
+(3, 2, 'NW-Store', '+62831012231', 'Laptop Asus ROG', 6000000, 'uploads/1741853131_Logo.png', 'Blablabla', 'tersedia'),
+(4, 4, 'Wolf.Dev', '+6283101214581', 'Jasa Developer', 50000, 'uploads/1741909309_serigala.jpg', 'Dicoba dulu', 'tersedia');
 
 -- --------------------------------------------------------
 
@@ -118,13 +122,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `kategori`
 --
 ALTER TABLE `kategori`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `produk`
 --
 ALTER TABLE `produk`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `users`

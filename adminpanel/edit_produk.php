@@ -100,6 +100,71 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             input.value = input.value.replace(/^0+/, "");
         }
     </script>
+    <style>
+    body {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: #fff;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        max-width: 600px;
+        margin: auto;
+    }
+
+    h2 {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: #ff8c00;
+        box-shadow: 0 0 5px #ff8c00;
+    }
+
+    .btn-primary {
+        background-color: #ff8c00;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #e07b00;
+    }
+
+    .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.3);
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    img {
+        display: block;
+        margin-top: 10px;
+        border-radius: 8px;
+    }
+
+    .badge {
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+</style>
+
 </head>
 <body>
 <div class="container mt-5">
@@ -154,6 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <label class="form-label">Foto Produk</label>
             <input type="file" name="foto" class="form-control">
             <img src="../<?= $produk['foto'] ?>" width="100" class="mt-2">
+        </div>
+        <div class="mb-3">
+            <p><span class="badge bg-danger">Jangan dipake dulu, ini ada bug di image nya.</span></p>
         </div>
         <button type="submit" class="btn btn-primary">Simpan</button>
         <a href="index.php" class="btn btn-secondary">Kembali</a>

@@ -58,6 +58,71 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Kategori</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    body {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: #fff;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        max-width: 600px;
+        margin: auto;
+    }
+
+    h2 {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: #ff8c00;
+        box-shadow: 0 0 5px #ff8c00;
+    }
+
+    .btn-primary {
+        background-color: #ff8c00;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #e07b00;
+    }
+
+    .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.3);
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    img {
+        display: block;
+        margin-top: 10px;
+        border-radius: 8px;
+    }
+
+    .badge {
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+</style>
+
 </head>
 <body>
 <div class="container mt-5">

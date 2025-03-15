@@ -59,6 +59,100 @@ $total_pages = ceil($total_produk / $limit);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Toko Online</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    /* Background */
+    body {
+        background: linear-gradient(135deg, #000428, #004e92);
+        color: #fff;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Navbar */
+    .navbar {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(10px);
+        padding: 15px;
+    }
+
+    .navbar-brand {
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+
+    /* Form Pencarian */
+    .form-control {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        backdrop-filter: blur(5px);
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn-primary {
+        background-color: #ff8b00;
+        border: none;
+        transition: 0.3s;
+    }
+
+    .btn-primary:hover {
+        background-color: #ff3300;
+    }
+
+    /* Card Produk */
+    .card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+
+    .card-img-top {
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        transition: 0.3s;
+    }
+
+    .card-img-top:hover {
+        filter: brightness(90%);
+    }
+
+    .card-title {
+        font-weight: bold;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+    }
+
+    /* Pagination */
+    .pagination .page-item .page-link {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+
+    .pagination .page-item.active .page-link {
+        background: #ff8b00;
+        border-radius: 5px;
+    }
+
+    .pagination .page-item .page-link:hover {
+        background: #ff3300;
+    }
+
+</style>
+
 </head>
 <body>
 <nav class="navbar fixed-top navbar-light bg-light">
